@@ -274,12 +274,6 @@ export default function ObjectDetails({ selection }) {
             </div>
           </div>
         </div>
-
-        {/* AI ASSESSMENT */}
-
-        {!isFunctionGroupParent && assessment && (
-          <AssessmentBadge status={assessment.status} />
-        )}
       </div>
 
       {/* ======================================================
