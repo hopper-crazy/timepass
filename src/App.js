@@ -1,17 +1,4 @@
-import { useState } from "react";
-
-/*
- * ============================================================
- * PRODUCTION IMPORT
- * ============================================================
- *
- * Uncomment useEffect when enabling the real connection API:
- *
- * import { useEffect, useState } from "react";
- *
- * And remove:
- * import { useState } from "react";
- */
+import { useEffect, useState } from "react";
 
 import Header from "./components/Header";
 import HomePage from "./components/HomePage";
@@ -36,7 +23,7 @@ function App() {
    * ==========================================================
    *
    * For frontend testing we are forcing the connection to TRUE.
-   * No connection API is called.
+   * No connection API is currently called.
    */
 
   const connected = true;
@@ -48,19 +35,22 @@ function App() {
    * ==========================================================
    *
    * Uncomment these when enabling the backend API.
-   *
-   * IMPORTANT:
-   * Also change the React import at the top to:
-   *
-   * import { useEffect, useState } from "react";
-   */
-
   /*
   const [connected, setConnected] = useState(false);
 
   const [checkingConnection, setCheckingConnection] =
     useState(true);
   */
+
+  // ============================================================
+  // SELECTED SAP SYSTEM
+  // ============================================================
+
+  /*
+   * No SAP system is selected by default.
+   */
+
+  const [selectedSystem, setSelectedSystem] = useState("");
 
   // ============================================================
   // TRANSPORT ANALYSIS STATE
@@ -100,24 +90,6 @@ function App() {
           data
         );
 
-        /*
-         * Adjust this logic if your FastAPI response
-         * has a different structure.
-         *
-         * Supported examples:
-         *
-         * true
-         *
-         * {
-         *   "connected": true
-         * }
-         *
-         * {
-         *   "status": true
-         * }
-         */
-
-  /*
         const isConnected =
           data === true ||
           data?.connected === true ||
@@ -147,9 +119,45 @@ function App() {
   // ============================================================
 
   const handleAnalyze = async (transportRequest) => {
-    if (!transportRequest) {
+    // ==========================================================
+    // NORMALIZE TRANSPORT
+    // ==========================================================
+
+    const normalizedTransport = transportRequest?.trim().toUpperCase();
+
+    // ==========================================================
+    // VALIDATE TRANSPORT
+    // ==========================================================
+
+    if (!normalizedTransport) {
+      setError("Please enter a transport request.");
       return;
     }
+
+    // ==========================================================
+    // VALIDATE SAP SYSTEM
+    // ==========================================================
+    //
+    // IMPORTANT:
+    //
+    // The system is checked BEFORE:
+    //
+    // - loading state
+    // - dummy processing
+    // - fetch()
+    // - POST request
+    //
+    // Therefore the backend cannot be called without a system.
+    // ==========================================================
+
+    if (!selectedSystem) {
+      setError("Please select an SAP system.");
+      return;
+    }
+
+    // ==========================================================
+    // START ANALYSIS
+    // ==========================================================
 
     setLoading(true);
     setError(null);
@@ -158,29 +166,47 @@ function App() {
       // ========================================================
       // CURRENT TEST / DUMMY MODE
       // ========================================================
+      //
+      // This section is currently ACTIVE.
+      //
+      // When enabling the real API:
+      //
+      // 1. Comment/remove this dummy section.
+      // 2. Uncomment the REAL TRANSPORT REVIEW API below.
+      // ========================================================
 
       /*
-       * Simulate a small backend processing delay.
-       *
-       * This allows the loading state to be visible during
-       * frontend testing and leadership demonstrations.
+       * Simulate backend processing.
        */
 
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       /*
-       * Clone dummy data so the imported object itself
+       * Clone dummy data so the imported dummy object itself
        * is never modified.
        */
 
       const result = JSON.parse(JSON.stringify(dummyTransportData));
 
       /*
-       * Replace the dummy TR number with whatever the
-       * user entered on the Home Page.
+       * Replace dummy TR with the TR entered by the developer.
        */
 
-      result.transport_request = transportRequest;
+      result.transport_request = normalizedTransport;
+
+      /*
+       * Add selected SAP system to the dummy result.
+       *
+       * This lets the review data know which system was used
+       * even while running in frontend demo mode.
+       */
+
+      result.system = selectedSystem;
+
+      console.log("SPICE dummy analysis:", {
+        transport_request: normalizedTransport,
+        system: selectedSystem,
+      });
 
       /*
        * Store analysis result.
@@ -198,15 +224,19 @@ function App() {
       // REAL TRANSPORT REVIEW API
       // CURRENTLY COMMENTED FOR FRONTEND TESTING
       // ========================================================
-
-      /*
-       * IMPORTANT:
-       *
-       * When enabling the real API:
-       *
-       * 1. Comment/remove the dummy section above.
-       * 2. Uncomment the API section below.
-       */
+      //
+      // When enabling the backend:
+      //
+      // 1. Remove/comment the dummy section above.
+      // 2. Uncomment this entire block.
+      //
+      // Request body:
+      //
+      // {
+      //   "transport_request": "DS4K900123",
+      //   "system": "DS4"
+      // }
+      // ========================================================
 
       /*
       const response = await fetch(
@@ -219,7 +249,8 @@ function App() {
           },
 
           body: JSON.stringify({
-            transport_request: transportRequest,
+            transport_request: normalizedTransport,
+            system: selectedSystem,
           }),
         }
       );
@@ -236,7 +267,6 @@ function App() {
           } else if (errorData?.message) {
             errorMessage = errorData.message;
           }
-
         } catch {
           // Response did not contain JSON.
         }
@@ -274,6 +304,25 @@ function App() {
     setError(null);
 
     setPage("home");
+
+    /*
+     * selectedSystem is intentionally NOT reset.
+     *
+     * Example:
+     *
+     * Developer reviews:
+     *
+     * DS4K900123 -> DS4
+     *
+     * Then clicks "New Transport".
+     *
+     * DS4 remains selected because developers will commonly
+     * review multiple transports from the same SAP system.
+     *
+     * If you want the system to reset every time instead:
+     *
+     * setSelectedSystem("");
+     */
   };
 
   // ============================================================
@@ -299,6 +348,8 @@ function App() {
           error={error}
           connected={connected}
           checkingConnection={checkingConnection}
+          selectedSystem={selectedSystem}
+          setSelectedSystem={setSelectedSystem}
         />
       )}
 
