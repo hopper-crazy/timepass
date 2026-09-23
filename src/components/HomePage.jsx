@@ -5,6 +5,7 @@ import {
   Bot,
   Braces,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   Code2,
   Cpu,
@@ -12,10 +13,13 @@ import {
   Layers3,
   LockKeyhole,
   Search,
+  Server,
   ShieldCheck,
   Sparkles,
   Zap,
 } from "lucide-react";
+
+import { SAP_SYSTEMS } from "../utils/systems";
 
 export default function HomePage({
   onAnalyze,
@@ -23,6 +27,8 @@ export default function HomePage({
   error = null,
   connected = false,
   checkingConnection = false,
+  selectedSystem = "",
+  setSelectedSystem,
 }) {
   // ============================================================
   // TRANSPORT INPUT
@@ -42,6 +48,17 @@ export default function HomePage({
     if (!transportRequest || loading) {
       return;
     }
+
+    /*
+     * SAP system validation is handled by App.js.
+     *
+     * We intentionally DO NOT disable submission when
+     * selectedSystem is empty.
+     *
+     * This allows App.js to display:
+     *
+     * "Please select an SAP system."
+     */
 
     onAnalyze(transportRequest);
   };
@@ -680,8 +697,9 @@ export default function HomePage({
                   </h2>
 
                   <p className="mt-1 text-xs leading-5 text-slate-500">
-                    Enter an SAP transport request to inspect its development
-                    objects, source code, ATC findings and AI review.
+                    Select the target SAP system and enter a transport request
+                    to inspect its development objects, source code, ATC
+                    findings and AI review.
                   </p>
                 </div>
               </div>
@@ -849,6 +867,9 @@ export default function HomePage({
                   <div
                     className="
                       mt-3
+                      flex
+                      items-center
+                      gap-2
                       rounded-lg
                       border
                       border-red-200
@@ -856,9 +877,20 @@ export default function HomePage({
                       px-4
                       py-3
                       text-xs
+                      font-medium
                       text-red-700
                     "
                   >
+                    <span
+                      className="
+                        h-1.5
+                        w-1.5
+                        shrink-0
+                        rounded-full
+                        bg-red-500
+                      "
+                    />
+
                     {error}
                   </div>
                 )}
@@ -867,8 +899,6 @@ export default function HomePage({
 
             {/* ==================================================
                 ENVIRONMENT
-
-                No duplicate "Connected" status here.
             ================================================== */}
 
             <div
@@ -894,7 +924,128 @@ export default function HomePage({
                 Environment
               </div>
 
-              <div className="mt-5 space-y-4">
+              {/* ==================================================
+                  SAP SYSTEM SELECTOR
+              ================================================== */}
+
+              <div className="mt-5">
+                <div className="mb-2 flex items-center gap-2">
+                  <Server size={13} className="text-slate-400" />
+
+                  <label
+                    htmlFor="sapSystem"
+                    className="
+                      text-[10px]
+                      font-medium
+                      text-slate-500
+                    "
+                  >
+                    SAP System
+                  </label>
+
+                  <span className="text-[10px] font-bold text-[#b11f2e]">
+                    *
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <select
+                    id="sapSystem"
+                    value={selectedSystem}
+                    onChange={(event) => setSelectedSystem(event.target.value)}
+                    disabled={loading}
+                    className="
+                      h-11
+                      w-full
+                      cursor-pointer
+                      appearance-none
+                      rounded-lg
+                      border
+                      border-slate-200
+                      bg-white
+                      pl-3.5
+                      pr-10
+                      text-[11px]
+                      font-semibold
+                      text-[#12233f]
+                      outline-none
+                      transition-all
+                      duration-150
+
+                      hover:border-slate-300
+
+                      focus:border-[#b11f2e]/40
+                      focus:ring-4
+                      focus:ring-[#b11f2e]/[0.06]
+
+                      disabled:cursor-not-allowed
+                      disabled:bg-slate-100
+                      disabled:text-slate-400
+                    "
+                  >
+                    <option value="">Select SAP system</option>
+
+                    {SAP_SYSTEMS.map((system) => (
+                      <option key={system.value} value={system.value}>
+                        {system.label} — {system.description}
+                      </option>
+                    ))}
+                  </select>
+
+                  <ChevronDown
+                    size={14}
+                    className="
+                      pointer-events-none
+                      absolute
+                      right-3.5
+                      top-1/2
+                      -translate-y-1/2
+                      text-slate-400
+                    "
+                  />
+                </div>
+
+                {/* SELECTED SYSTEM */}
+
+                {selectedSystem && (
+                  <div
+                    className="
+                      mt-2.5
+                      flex
+                      items-center
+                      gap-2
+                      text-[9px]
+                      text-slate-400
+                    "
+                  >
+                    <span
+                      className="
+                        h-1.5
+                        w-1.5
+                        rounded-full
+                        bg-emerald-500
+                      "
+                    />
+                    Target system
+                    <span
+                      className="
+                        font-bold
+                        text-slate-600
+                      "
+                    >
+                      {selectedSystem}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* DIVIDER */}
+
+              <div className="my-5 h-px bg-slate-200" />
+
+              {/* ENVIRONMENT DETAILS */}
+
+              <div className="space-y-4">
                 <EnvironmentRow
                   icon={Cpu}
                   label="Platform"
@@ -918,6 +1069,8 @@ export default function HomePage({
 
               <div className="my-5 h-px bg-slate-200" />
 
+              {/* GOVERNANCE */}
+
               <div
                 className="
                   rounded-lg
@@ -930,15 +1083,32 @@ export default function HomePage({
                 <div className="flex items-start gap-2.5">
                   <ShieldCheck
                     size={14}
-                    className="mt-0.5 shrink-0 text-[#b11f2e]"
+                    className="
+                      mt-0.5
+                      shrink-0
+                      text-[#b11f2e]
+                    "
                   />
 
                   <div>
-                    <div className="text-[10px] font-semibold text-[#12233f]">
+                    <div
+                      className="
+                        text-[10px]
+                        font-semibold
+                        text-[#12233f]
+                      "
+                    >
                       Governance Workspace
                     </div>
 
-                    <p className="mt-1 text-[9px] leading-4 text-slate-400">
+                    <p
+                      className="
+                        mt-1
+                        text-[9px]
+                        leading-4
+                        text-slate-400
+                      "
+                    >
                       Centralized transport inspection for SAP development
                       quality and review.
                     </p>
